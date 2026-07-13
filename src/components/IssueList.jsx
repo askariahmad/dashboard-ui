@@ -36,6 +36,12 @@ const getSeverityStyles = (severity) => {
   return { background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' };
 };
 
+const getHumanId = (id) => {
+  if (!id) return '';
+  // Use the last 5 characters of the MongoDB ObjectId to create a short, readable ID
+  return 'INC-' + id.substring(id.length - 5).toUpperCase();
+};
+
 const DiffRenderer = ({ node, inline, className, children, ...props }) => {
   const match = /language-(\w+)/.exec(className || '');
   if (!inline && match && match[1].toLowerCase() === 'diff') {
@@ -415,8 +421,8 @@ const IssueList = ({
                         {item.jiraTicketKey}
                       </span>
                     )}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }} title={item.id}>
-                      {item.id.substring(0, 8)}
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-color)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--surface-border)' }} title={item.id}>
+                      {getHumanId(item.id)}
                     </span>
                   </div>
                 </div>
@@ -498,6 +504,7 @@ const IssueList = ({
                 </div>
 
                 <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.02em', lineHeight: '1.4' }}>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 500, marginRight: '0.5rem', fontSize: '1.1rem' }}>{getHumanId(selectedNorm.id)}</span>
                   {selectedNorm.normalizedTitle}
                 </h3>
 
