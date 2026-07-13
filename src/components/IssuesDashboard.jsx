@@ -34,7 +34,6 @@ const IssuesDashboard = ({ jwtToken }) => {
     .then(data => {
       if (Array.isArray(data)) {
         setIncidents(data);
-        setSelectedIncident(null);
       }
     })
     .catch(err => {
@@ -50,7 +49,6 @@ const IssuesDashboard = ({ jwtToken }) => {
     .then(data => {
       if (Array.isArray(data)) {
         setIncidents(data);
-        setSelectedIncident(prev => prev ? data.find(i => i.id === prev.id) || prev : null);
       }
     })
     .catch(err => {
@@ -68,7 +66,6 @@ const IssuesDashboard = ({ jwtToken }) => {
         },
         body: JSON.stringify({ severity: newSeverity })
       });
-      setSelectedIncident(prev => ({ ...prev, severity: newSeverity }));
       fetchIncidents();
     } catch (e) {
       console.error('Error updating severity', e);
