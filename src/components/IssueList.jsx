@@ -240,7 +240,7 @@ const IssueList = ({
   const [descTab, setDescTab] = useState('raw'); // 'raw' or 'preview'
   const [editedWhy, setEditedWhy] = useState('');
   const [editedHowToFix, setEditedHowToFix] = useState('');
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regeneratingIds, setRegeneratingIds] = useState([]);
   const [isSavingDesc, setIsSavingDesc] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -258,7 +258,8 @@ const IssueList = ({
 
   const handleRegenerate = () => {
     if (!selectedNorm) return;
-    setIsRegenerating(true);
+    const currentId = selectedNorm.id;
+    setRegeneratingIds(prev => [...prev, currentId]);
     fetch(`http://localhost:8080/api/v1/scanner/regenerate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': 'tenant-1', 'Authorization': `Bearer ${jwtToken}` },
@@ -269,20 +270,20 @@ const IssueList = ({
       return res.json();
     })
     .then(data => {
-      return fetch(`http://localhost:8080/api/v1/incidents/${selectedItem.id}/description`, {
+      return fetch(`http://localhost:8080/api/v1/incidents/${currentId}/description`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
         body: JSON.stringify({ why: data.why, howToFix: data.howToFix })
       }).then(() => data);
     })
     .then(data => {
-      setIsRegenerating(false);
+      setRegeneratingIds(prev => prev.filter(id => id !== currentId));
       showToast('Description regenerated successfully!');
-      if (onJiraSync) onJiraSync(selectedItem.id);
+      if (onJiraSync) onJiraSync(currentId);
     })
     .catch(err => {
       console.error(err);
-      setIsRegenerating(false);
+      setRegeneratingIds(prev => prev.filter(id => id !== currentId));
       showToast('Failed to regenerate description.');
     });
   };
@@ -579,8 +580,8 @@ const IssueList = ({
                     <div className="detail-label" style={{ marginBottom: 0 }}>ANALYSIS (WHY & HOW TO FIX)</div>
                     {!isEditingDesc && (
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="saas-btn" onClick={handleRegenerate} disabled={isRegenerating}>
-                          {isRegenerating ? (
+                        <button className="saas-btn" onClick={handleRegenerate} disabled={regeneratingIds.includes(selectedNorm.id)}>
+                          {regeneratingIds.includes(selectedNorm.id) ? (
                             <><span style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid currentColor', borderRightColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '0.4rem', verticalAlign: 'middle' }}></span>Regenerating...</>
                           ) : (
                             <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.4rem', verticalAlign: 'middle' }}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>Regenerate</>
