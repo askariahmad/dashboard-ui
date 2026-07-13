@@ -53,6 +53,7 @@ const SettingsDashboard = ({ jwtToken, hideHeader = false }) => {
           githubRepositories: data.githubRepositories || [],
           llmConfigs: (data.llmConfigs || []).map(c => ({
             ...c,
+            timeoutSeconds: c.timeoutSeconds || 300,
             isActive: c.provider === data.activeLlmProvider
           })),
           matchThreshold: data.matchThreshold || 0.85,
@@ -134,7 +135,7 @@ const SettingsDashboard = ({ jwtToken, hideHeader = false }) => {
   const openLlmModalForAdd = () => {
     setLlmModalState({
       isOpen: true,
-      config: { id: crypto.randomUUID(), provider: 'OPENAI', modelName: '', baseUrl: '', apiKey: '', isActive: config.llmConfigs.length === 0 },
+      config: { id: crypto.randomUUID(), provider: 'OPENAI', modelName: '', baseUrl: '', apiKey: '', timeoutSeconds: 300, isActive: config.llmConfigs.length === 0 },
       index: -1
     });
     setShowToken(prev => ({ ...prev, llm: false }));
@@ -632,6 +633,10 @@ const SettingsDashboard = ({ jwtToken, hideHeader = false }) => {
                     <EyeIcon show={showToken.llm} />
                   </button>
                 </div>
+              </div>
+              <div className="form-group">
+                <label>Timeout (Seconds)</label>
+                <input className="input-field" type="number" name="timeoutSeconds" value={llmModalState.config.timeoutSeconds || 300} onChange={handleLlmModalChange} min="10" />
               </div>
             </div>
             <div className="card-footer" style={{ justifyContent: 'space-between', gap: '0.75rem', display: 'flex' }}>

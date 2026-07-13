@@ -422,13 +422,17 @@ const IssueList = ({
                         {item.jiraTicketKey}
                       </span>
                     )}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-color)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--surface-border)' }} title={item.id}>
-                      {getHumanId(item.id)}
-                    </span>
                   </div>
                 </div>
-                <div style={{ fontWeight: '500', fontSize: '0.95rem', marginBottom: '0.4rem', color: 'var(--text-main)' }}>{item.normalizedTitle}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Occurrences: {item.normalizedOccurrences}</div>
+                <div style={{ fontWeight: '500', fontSize: '0.95rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{item.normalizedTitle}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, background: 'var(--bg-color)', padding: '0.1rem 0.3rem', borderRadius: '4px', border: '1px solid var(--surface-border)' }}>{getHumanId(item.id)}</span>
+                    {item.repository && <span>{item.repository}</span>}
+                    <span>{item.normalizedOccurrences} Occurrences</span>
+                  </div>
+                  {item.jiraAssignee && <span style={{ fontStyle: 'italic' }}>{item.jiraAssignee}</span>}
+                </div>
               </div>
             ))}
             
@@ -506,27 +510,28 @@ const IssueList = ({
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto', marginRight: '1rem' }}>
                     {selectedNorm.exactCodeFix && onCreatePR && (
                       <button 
+                        className="saas-btn"
                         onClick={(e) => onCreatePR(e, selectedNorm)} 
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#166534', borderColor: '#bbf7d0', padding: '0.4rem 0.75rem' }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                         Auto-Fix (PR)
                       </button>
                     )}
                     {selectedNorm.jiraTicketKey ? (
-                      <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #90cdf4' }}>
-                        <a href={selectedNorm.jiraTicketUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', background: '#ebf4ff', color: '#2b6cb0', fontSize: '0.75rem', fontWeight: 600, borderRight: '1px solid #90cdf4' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                      <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--surface-border)', background: 'var(--surface)' }}>
+                        <a href={selectedNorm.jiraTicketUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.75rem', color: '#2b6cb0', fontSize: '0.85rem', fontWeight: 600, borderRight: '1px solid var(--surface-border)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                           {selectedNorm.jiraTicketKey}
                         </a>
-                        <button onClick={() => onJiraSync && onJiraSync(selectedNorm.id)} style={{ border: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', background: '#ebf4ff', color: '#2b6cb0', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        <button onClick={() => onJiraSync && onJiraSync(selectedNorm.id)} style={{ border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.75rem', background: 'transparent', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }} className="saas-btn">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                           Sync
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => onJiraCreate && onJiraCreate(selectedNorm.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#ebf4ff', color: '#2b6cb0', border: '1px solid #90cdf4', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"></path></svg>
+                      <button className="saas-btn" onClick={() => onJiraCreate && onJiraCreate(selectedNorm.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#2b6cb0', borderColor: '#90cdf4', padding: '0.4rem 0.75rem' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"></path></svg>
                         Create Jira Ticket
                       </button>
                     )}
