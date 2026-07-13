@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
 import './Dashboard.css';
 import SettingsDashboard from './components/SettingsDashboard';
 import IssuesDashboard from './components/IssuesDashboard';
@@ -10,7 +11,8 @@ function App() {
   const [jwtToken, setJwtToken] = useState(localStorage.getItem('jwtToken') || null);
   const [username, setUsername] = useState(localStorage.getItem('username') || '');
   const [hasConfig, setHasConfig] = useState(null); // null = loading, false = onboarding, true = dashboard
-  const [activeTab, setActiveTab] = useState('issues');
+  const [activeTab, setActiveTabState] = useState(localStorage.getItem('activeTab') || 'issues');
+  const setActiveTab = (tab) => { setActiveTabState(tab); localStorage.setItem('activeTab', tab); };
   const [showDropdown, setShowDropdown] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const dropdownRef = useRef(null);
@@ -38,6 +40,7 @@ function App() {
     setHasConfig(null);
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('username');
+    localStorage.removeItem('activeTab');
   };
 
   // Check config status once logged in
@@ -53,12 +56,13 @@ function App() {
           
           if (res.ok) {
             const data = await res.json();
-            // If it has an ID, it was saved in DB. Otherwise it's a new empty config.
             if (data && data.id) {
               setHasConfig(true);
             } else {
               setHasConfig(false);
             }
+          } else if (res.status === 401 || res.status === 403) {
+            handleLogout();
           } else {
             setHasConfig(false);
           }
@@ -82,6 +86,50 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
+
+  // SSE for notifications
+  useEffect(() => {
+    if (jwtToken && hasConfig) {
+      // First fetch historical notifications from backend
+      fetch('http://localhost:8080/api/v1/notifications', {
+        headers: { 'Authorization': `Bearer ${jwtToken}` }
+      })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setNotifications(data);
+        }
+      })
+      .catch(() => {}); // Silently ignore if notification service is down
+
+      // Then connect SSE for live updates through API Gateway
+      const evtSource = new EventSource(`http://localhost:8080/api/v1/notifications/stream?token=${jwtToken}`);
+      
+      evtSource.onmessage = (event) => {
+        const notif = JSON.parse(event.data);
+        setNotifications(prev => [notif, ...prev]);
+      };
+      
+      evtSource.onerror = () => evtSource.close();
+      
+      return () => evtSource.close();
+    }
+  }, [jwtToken, hasConfig]);
+
+  // Close notif dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (!jwtToken) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
@@ -90,12 +138,11 @@ function App() {
     return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)', color: 'var(--text-main)' }}>Loading...</div>;
   }
 
-  if (hasConfig === false) {
-    return <OnboardingScreen jwtToken={jwtToken} onComplete={() => setHasConfig(true)} />;
-  }
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="app-container">
+      <Toaster position="top-right" toastOptions={{ style: { background: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--surface-border)' } }} />
       {/* Professional Top Bar */}
       <header className="topbar">
         <div className="topbar-left">
@@ -105,23 +152,63 @@ function App() {
             </svg>
             DevOps Pro
           </div>
-          <nav className="top-nav">
-            <div 
-              className={`top-nav-item ${activeTab === 'issues' ? 'active' : ''}`}
-              onClick={() => setActiveTab('issues')}
-            >
-              Overview
-            </div>
-            <div 
-              className={`top-nav-item ${activeTab === 'repositories' ? 'active' : ''}`}
-              onClick={() => setActiveTab('repositories')}
-            >
-              Repositories
-            </div>
-          </nav>
+          {hasConfig !== false && (
+            <nav className="top-nav">
+              <div 
+                className={`top-nav-item ${activeTab === 'issues' ? 'active' : ''}`}
+                onClick={() => setActiveTab('issues')}
+              >
+                Overview
+              </div>
+              <div 
+                className={`top-nav-item ${activeTab === 'repositories' ? 'active' : ''}`}
+                onClick={() => setActiveTab('repositories')}
+              >
+                Repositories
+              </div>
+            </nav>
+          )}
         </div>
 
         <div className="topbar-actions">
+          {/* Notification Bell */}
+          <div className="user-dropdown-container" ref={notifRef} style={{ marginRight: '1rem' }}>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '0.5rem', position: 'relative', border: 'none', background: 'transparent' }}
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              {unreadCount > 0 && (
+                <span style={{ position: 'absolute', top: '2px', right: '2px', background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            {showNotifications && (
+              <div className="dropdown-menu" style={{ width: '300px', right: '-50px', padding: 0 }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--surface-border)', fontWeight: 'bold' }}>
+                  Notifications
+                </div>
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>No notifications</div>
+                  ) : (
+                    notifications.map((notif, idx) => (
+                      <div key={idx} style={{ padding: '1rem', borderBottom: '1px solid var(--surface-border)', background: notif.read ? 'transparent' : 'rgba(var(--primary-color-rgb), 0.05)' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.25rem' }}>{notif.title}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{notif.message}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Theme Toggle */}
           <button 
             type="button"
@@ -154,18 +241,21 @@ function App() {
 
             {showDropdown && (
               <div className="dropdown-menu">
-                <div 
-                  className="dropdown-item"
-                  onClick={() => setActiveTab('settings')}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                  System Settings
-                </div>
-                
-                <div className="dropdown-divider"></div>
+                {hasConfig !== false && (
+                  <>
+                    <div 
+                      className="dropdown-item"
+                      onClick={() => setActiveTab('settings')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      </svg>
+                      System Settings
+                    </div>
+                    <div className="dropdown-divider"></div>
+                  </>
+                )}
                 
                 <div className="dropdown-item danger" onClick={handleLogout}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -183,11 +273,26 @@ function App() {
 
       {/* Main Dashboard Area */}
       <div className="dashboard-layout">
-        
         <main className="main-content">
-          {activeTab === 'issues' && <IssuesDashboard jwtToken={jwtToken} />}
-          {activeTab === 'repositories' && <RepositoriesDashboard jwtToken={jwtToken} />}
-          {activeTab === 'settings' && <SettingsDashboard jwtToken={jwtToken} />}
+          {hasConfig === false ? (
+            <OnboardingScreen jwtToken={jwtToken} onComplete={() => setHasConfig(true)} />
+          ) : (
+            <>
+              {localStorage.getItem('unverified_connections') === 'true' && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem 1rem', borderRadius: '6px', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <strong>Warning:</strong> You have unverified workspace connections. Some features may not work.
+                  </div>
+                  <button className="btn btn-secondary" onClick={() => setActiveTab('settings')} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+                    Verify Now
+                  </button>
+                </div>
+              )}
+              {activeTab === 'issues' && <IssuesDashboard jwtToken={jwtToken} />}
+              {activeTab === 'repositories' && <RepositoriesDashboard jwtToken={jwtToken} />}
+              {activeTab === 'settings' && <SettingsDashboard jwtToken={jwtToken} />}
+            </>
+          )}
         </main>
       </div>
     </div>
