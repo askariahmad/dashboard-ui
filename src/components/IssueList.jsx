@@ -443,15 +443,15 @@ const IssueList = ({
         {selectedNorm && (
           <div style={{ flex: 2, background: 'var(--surface)', borderLeft: '1px solid var(--surface-border)', border: '1px solid var(--surface-border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Severity:</span>
+              <div style={{ flex: 1, paddingRight: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-color)', padding: '0.1rem', borderRadius: '6px', border: '1px solid var(--surface-border)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, paddingLeft: '0.5rem', paddingRight: '0.25rem' }}>SEVERITY:</span>
                     <select 
                       className="input-field" 
                       value={selectedNorm.normalizedSeverity}
                       onChange={(e) => onUpdateSeverity && onUpdateSeverity(selectedNorm.id, e.target.value)}
-                      style={{ width: 'auto', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', ...getSeverityStyles(selectedNorm.normalizedSeverity) }}
+                      style={{ border: 'none', width: 'auto', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', ...getSeverityStyles(selectedNorm.normalizedSeverity) }}
                     >
                       <option value="LOW">Low</option>
                       <option value="MEDIUM">Medium</option>
@@ -459,12 +459,10 @@ const IssueList = ({
                       <option value="CRITICAL">Critical</option>
                     </select>
                   </div>
-                  <span className="saas-badge" style={{ ...getTypeStyles(selectedNorm.normalizedType) }}>{selectedNorm.normalizedType}</span>
-                  {selectedNorm.jiraTicketKey && (
-                    <span style={{ fontSize: '0.75rem', background: '#ebf4ff', padding: '0.25rem 0.5rem', borderRadius: '4px', color: '#2b6cb0', fontWeight: '600', border: '1px solid #90cdf4' }}>
-                      {selectedNorm.jiraTicketKey}
-                    </span>
-                  )}
+                  <span className="saas-badge" style={{ ...getTypeStyles(selectedNorm.normalizedType), padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {selectedNorm.normalizedType}
+                  </span>
+                  
                   {selectedNorm.jiraStatus && (
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <select 
@@ -474,17 +472,13 @@ const IssueList = ({
                           if (onTransition) {
                             setIsTransitioning(true);
                             onTransition(selectedNorm.id, e.target.value);
-                            // Refetch transitions after brief delay to get updated status
                             setTimeout(() => {
                               fetch(`http://localhost:8080/api/v1/incidents/${selectedNorm.id}/jira/transitions`, {
                                 headers: { 'Authorization': `Bearer ${jwtToken}` }
                               }).then(res => res.json()).then(data => {
                                 setTransitions(data || []);
                                 setIsTransitioning(false);
-                              }).catch((err) => {
-                                console.error(err);
-                                setIsTransitioning(false);
-                              });
+                              }).catch(console.error);
                             }, 1500);
                           }
                         }}
@@ -502,20 +496,24 @@ const IssueList = ({
                     </div>
                   )}
                 </div>
-                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '600', color: 'var(--text-main)', letterSpacing: '-0.01em', lineHeight: '1.3' }}>{selectedNorm.normalizedTitle}</h3>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+
+                <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.02em', lineHeight: '1.4' }}>
+                  {selectedNorm.normalizedTitle}
+                </h3>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   {selectedNorm.repository && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-color)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--surface-border)' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                       {selectedNorm.repository}
                     </span>
                   )}
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     {selectedNorm.normalizedOccurrences} Occurrences
                   </span>
                   {selectedNorm.jiraTicketKey && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                       <strong>{selectedNorm.jiraAssignee || 'Unassigned'}</strong>
                     </span>
@@ -523,35 +521,39 @@ const IssueList = ({
                 </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                {selectedNorm.exactCodeFix && onCreatePR && (
-                  <button 
-                    className="saas-btn" 
-                    onClick={(e) => onCreatePR(e, selectedNorm)} 
-                  >
-                    Auto-Fix (PR)
-                  </button>
-                )}
-                {selectedNorm.jiraTicketKey ? (
-                  <div style={{ display: 'flex', background: 'var(--surface)', border: '1px solid var(--surface-border)', borderRadius: '6px', overflow: 'hidden' }}>
-                    <a href={selectedNorm.jiraTicketUrl} target="_blank" rel="noreferrer" className="saas-btn" style={{ border: 'none', borderRadius: 0, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', borderRight: '1px solid var(--surface-border)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                      Jira
-                    </a>
-                    <button className="saas-btn" onClick={() => onJiraSync && onJiraSync(selectedNorm.id)} style={{ border: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', borderRight: 'none' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                      Sync
-                    </button>
-                  </div>
-                ) : (
-                  <button className="saas-btn-primary" onClick={() => onJiraCreate && onJiraCreate(selectedNorm.id)}>
-                    Create Jira Ticket
-                  </button>
-                )}
-                
-                <button onClick={() => setSelectedItem(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-end', flexShrink: 0 }}>
+                <button onClick={() => setSelectedItem(null)} style={{ background: 'var(--surface)', border: '1px solid var(--surface-border)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.2s', padding: 0 }} title="Close Details">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
+                
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {selectedNorm.exactCodeFix && onCreatePR && (
+                    <button 
+                      className="saas-btn" 
+                      onClick={(e) => onCreatePR(e, selectedNorm)} 
+                      style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontWeight: 600 }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.4rem', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                      Auto-Fix (PR)
+                    </button>
+                  )}
+                  {selectedNorm.jiraTicketKey ? (
+                    <div style={{ display: 'flex', background: 'var(--surface)', border: '1px solid var(--surface-border)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <a href={selectedNorm.jiraTicketUrl} target="_blank" rel="noreferrer" className="saas-btn" style={{ border: 'none', borderRadius: 0, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', borderRight: '1px solid var(--surface-border)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        {selectedNorm.jiraTicketKey}
+                      </a>
+                      <button className="saas-btn" onClick={() => onJiraSync && onJiraSync(selectedNorm.id)} style={{ border: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', borderRight: 'none' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        Sync
+                      </button>
+                    </div>
+                  ) : (
+                    <button className="saas-btn-primary" onClick={() => onJiraCreate && onJiraCreate(selectedNorm.id)}>
+                      Create Jira Ticket
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
