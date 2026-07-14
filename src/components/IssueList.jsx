@@ -482,7 +482,8 @@ const IssueList = ({
                         onChange={(e) => {
                           if (onTransition) {
                             setIsTransitioning(true);
-                            onTransition(selectedNorm.id, e.target.value);
+                            const selectedOption = e.target.options[e.target.selectedIndex];
+                            onTransition(selectedNorm.id, e.target.value, selectedOption.text);
                             setTimeout(() => {
                               fetch(`http://localhost:8080/api/v1/incidents/${selectedNorm.id}/jira/transitions`, {
                                 headers: { 'Authorization': `Bearer ${jwtToken}` }

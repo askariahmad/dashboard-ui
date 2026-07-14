@@ -318,7 +318,7 @@ const RepositoriesDashboard = ({ jwtToken }) => {
     }
   };
 
-  const handleTransition = async (issueId, transitionId) => {
+  const handleTransition = async (issueId, transitionId, transitionName) => {
     if (!transitionId || !issueId) return;
     try {
       await fetch(`http://localhost:8080/api/v1/incidents/${issueId}/jira/transitions`, {
@@ -327,7 +327,7 @@ const RepositoriesDashboard = ({ jwtToken }) => {
           'Authorization': `Bearer ${jwtToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ transitionId })
+        body: JSON.stringify({ transitionId, transitionName })
       });
       handleJiraSync(issueId);
     } catch (e) {
