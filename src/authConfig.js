@@ -1,12 +1,18 @@
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
+// TODO: Replace with your Azure AD app registration values
+const ENTRA_CLIENT_ID = "<YOUR_CLIENT_ID>";
+const ENTRA_TENANT_ID = "<YOUR_TENANT_ID>";
+
 export const msalConfig = {
   auth: {
-    clientId: isLocal ? "11111111-1111-1111-1111-111111111111" : "YOUR_ENTRA_CLIENT_ID",
-    authority: isLocal ? "https://localhost:4577/00000000-0000-0000-0000-000000000002" : "https://login.microsoftonline.com/YOUR_TENANT_ID",
+    clientId: ENTRA_CLIENT_ID,
+    authority: isLocal
+      ? `https://localhost:4577/${ENTRA_TENANT_ID}`
+      : `https://login.microsoftonline.com/${ENTRA_TENANT_ID}`,
     redirectUri: window.location.origin,
     validateAuthority: !isLocal,
-    knownAuthorities: isLocal ? ["localhost:4577", "localhost"] : []
+    knownAuthorities: isLocal ? ["localhost"] : []
   },
   cache: {
     cacheLocation: "sessionStorage",
